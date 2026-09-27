@@ -3,7 +3,6 @@ fastapi
 uvicorn
 python-dotenv
 pyjwt
-python-jose[cryptography]
 pandas
 openpyxl
 pydantic
