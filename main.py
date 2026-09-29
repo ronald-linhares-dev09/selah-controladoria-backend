@@ -4,7 +4,7 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 from auth import supabase
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, List
 import jwt
 from jwt import PyJWKClient
 from io import BytesIO
@@ -17,7 +17,7 @@ app = FastAPI()
 
 app.add_middleware(
  CORSMiddleware,
- allow_origins=["https://www.selahconsultoria.com.br"],
+ allow_origins=["https://www.selahconsultoria.com.br",'http://localhost:5174'],
  allow_credentials=True,
  allow_methods=["*"],
  allow_headers=["*"]
@@ -377,7 +377,21 @@ async def gerar_excel(authorization : str = Header(...), dados : Dados_Validacao
   media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   headers={"Content-Disposition": f"attachment; filename=diagnostico_{dados.empresa}.xlsx"}
 )
+
+
+class Dados_Indicadores(BaseModel):
+ empresa : str
+ ims : List[Dict[str,Any]]
+ ics : List[Dict[str,Any]]
+
+@app.post('/gerar_pdf')
+async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indicadores = Body(...)):
+ id = id_user(authorization)
+
+ if not id :
+  raise HTTPException(status_code=404, detail='ID de usuário inválido')
  
+
 @app.get("/clientes_fechados")
 async def get_dados(authorization : str = Header(...)):
  
