@@ -169,6 +169,7 @@ async def get_empresas(authorization : str = Header(...)):
 class Respostas(BaseModel):
  empresa : str
  notas : Dict[str,Any]
+ cliente_id : int
 
 @app.post("/questionario")
 async def post_respostas(authorization : str = Header(...), data : Respostas = Body(...)):
@@ -179,6 +180,7 @@ async def post_respostas(authorization : str = Header(...), data : Respostas = B
 
  insert_data = {
   "id_user" : id,
+  'cliente_id' : data.cliente_id,
   "empresa" : data.empresa,
   "respostas" : data.notas
  }
