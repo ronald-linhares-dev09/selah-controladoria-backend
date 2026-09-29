@@ -183,7 +183,7 @@ async def post_respostas(authorization : str = Header(...), data : Respostas = B
   "respostas" : data.notas
  }
 
- response_1 = supabase.table("questionarios").upsert([insert_data],on_conflict="empresa, id_user").execute()
+ response_1 = supabase.table("questionarios").upsert([insert_data],on_conflict="cliente_id").execute()
 
  if not response_1.data :
   raise HTTPException(status_code=500, detail="Erro ao inserir no banco")
@@ -207,6 +207,7 @@ async def get_dados(authorization : str = Header(...)):
 
  data_clientes = [
    {
+      "id" : row["id"],
        "nome": row["nome"],
        "cpf": row["cpf"],
        "telefone" : row["telefone"],
@@ -271,19 +272,19 @@ async def updateStatus(empresa : str, authorization : str = Header(...), cliente
  return {"status":"Status do cliente atualizado com sucesso"}
 
 class Contrato (BaseModel) :
- cpf : str
+ cliente_id : int
  valor_mensal : str
  forma_pagamento : str
  tempo_contrato : str
 
-@app.delete("/delete_contrato/{cpf}")
-async def delete_contrato(cpf : str, authorization : str = Header(...)) :
+@app.delete("/delete_contrato/{cliente_id}")
+async def delete_contrato(cliente_id : int, authorization : str = Header(...)) :
  user_id = id_user(authorization)
 
  if not user_id :
   raise HTTPException(status_code=404, detail="Usuário não autorizado")
 
- response = supabase.table("contratos").delete().eq("cpf_cliente", cpf).execute()
+ response = supabase.table("contratos").delete().eq("cliente_id", cliente_id).execute()
 
  if response.data is None :
   raise HTTPException(status_code=500, detail="Contrato não encontrado na tabela")
@@ -301,14 +302,14 @@ async def att_contrato(authorization : str = Header(...), contrato : Contrato = 
  
  data_contrato = {
   "id_user" : id,
-  "cpf_cliente" : contrato.cpf,
+  "cliente_id" : contrato.cliente_id,
   "valor_mensal" : contrato.valor_mensal,
- "forma_pagamento" : contrato.forma_pagamento,
- "tempo_contrato" : contrato.tempo_contrato
+  "forma_pagamento" : contrato.forma_pagamento,
+  "tempo_contrato" : contrato.tempo_contrato
  }
 
 
- response = supabase.table("contratos").upsert([data_contrato],on_conflict="cpf_cliente").execute()
+ response = supabase.table("contratos").upsert([data_contrato],on_conflict="cliente_id").execute()
 
  if response.data is None :
   raise HTTPException(status_code=500, detail="Erro ao inserir contrato na tabela")
@@ -331,7 +332,7 @@ async def data_contrato(authorization : str = Header(...)):
 
  data = [
   {
-   "cpf_cliente": row["cpf_cliente"],
+   "cliente_id": row["cliente_id"],
    "valor_mensal": row["valor_mensal"],
    "tempo_contrato": row["tempo_contrato"],
    "forma_pagamento": row["forma_pagamento"],
@@ -407,6 +408,7 @@ async def get_dados(authorization : str = Header(...)):
 
  data_clientes = [
    {
+       "id" : row['id'],
        "nome": row["nome"],
        "cpf": row["cpf"],
        "telefone" : row["telefone"],
@@ -425,14 +427,14 @@ async def get_dados(authorization : str = Header(...)):
  
  return {"clientes": data_clientes}
 
-@app.get("/notas_questionario/{empresa}")
-async def get_notas (empresa : str, authorization : str = Header(...)) :
+@app.get("/notas_questionario/{cliente_id}")
+async def get_notas (cliente_id : int, authorization : str = Header(...)) :
  id = id_user(authorization)
 
  if not id :
   raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
- response = supabase.table("questionarios").select("respostas, conclusao, updated_at").eq("id_user", id).eq("empresa", empresa).execute()
+ response = supabase.table("questionarios").select("respostas, conclusao, updated_at").eq("id_user", id).eq("cliente_id", cliente_id).execute()
 
  if not response.data:
   raise HTTPException(status_code=500, detail="Erro ao consultar respostas da empresa na tabela")
@@ -451,15 +453,15 @@ async def get_notas (empresa : str, authorization : str = Header(...)) :
 class Conclusao (BaseModel) : 
  conclusao : str
 
-@app.patch("/data_conclusao/{empresa}")
-async def insert_conclusao(empresa : str, authorization : str = Header(...), data : Conclusao = Body(...) ) :
+@app.patch("/data_conclusao/{cliente_id}")
+async def insert_conclusao(cliente_id : int, authorization : str = Header(...), data : Conclusao = Body(...) ) :
  id = id_user(authorization)
 
  if not id :
   raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
 
- response = supabase.table("questionarios").update({"conclusao" : data.conclusao, "updated_at" : str(datetime.now())}).eq("empresa", empresa).eq("id_user", id).execute()
+ response = supabase.table("questionarios").update({"conclusao" : data.conclusao, "updated_at" : str(datetime.now())}).eq("cliente_id", cliente_id).eq("id_user", id).execute()
 
  if not response.data:
   raise HTTPException(status_code=409, detail="Erro ao inserir conclusão na tabela")
