@@ -253,7 +253,7 @@ async def updateCliente(cliente_id : str, authorization : str = Header(...), dad
  if not id :
   raise HTTPException(status_code=404, detail="Id de usuário inválido")
  
- response = supabase.table("lista_clientes").update(dados.model_dump()).eq("cliente_id", cliente_id).eq("id_user",id).execute()
+ response = supabase.table("lista_clientes").update(dados.model_dump()).eq("id", cliente_id).eq("id_user",id).execute()
 
  if response.data is None :
   raise HTTPException(status_code=500, detail="Erro ao executar update dos dados")
@@ -270,7 +270,7 @@ async def updateStatus(cliente_id : str, authorization : str = Header(...), clie
  if not id : 
   raise HTTPException(status_code=404, detail="Id de usuário inválido")
  
- response = supabase.table("lista_clientes").update(cliente.model_dump()).eq("id_user",id).eq("empresa",cliente_id).execute()
+ response = supabase.table("lista_clientes").update(cliente.model_dump()).eq("id_user",id).eq("id",cliente_id).execute()
 
  if response.data is None :
   raise HTTPException(status_code=500, detail="Erro ao alterar status do cliente")
