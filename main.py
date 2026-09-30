@@ -433,14 +433,14 @@ async def get_dados(authorization : str = Header(...)):
  
  return {"clientes": data_clientes}
 
-@app.get("/notas_questionario/{cliente_id}")
-async def get_notas (cliente_id : str, authorization : str = Header(...)) :
- id = id_user(authorization)
+@app.get("/notas_questionario/{id}")
+async def get_notas (id : str, authorization : str = Header(...)) :
+ user_id = id_user(authorization)
 
- if not id :
+ if not user_id :
   raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
- response = supabase.table("questionarios").select("respostas, conclusao, updated_at").eq("id_user", id).eq("cliente_id", cliente_id).execute()
+ response = supabase.table("questionarios").select("respostas, conclusao, updated_at").eq("id_user", user_id).eq("cliente_id", id).execute()
 
  if not response.data:
   raise HTTPException(status_code=500, detail="Erro ao consultar respostas da empresa na tabela")
@@ -459,15 +459,15 @@ async def get_notas (cliente_id : str, authorization : str = Header(...)) :
 class Conclusao (BaseModel) : 
  conclusao : str
 
-@app.patch("/data_conclusao/{cliente_id}")
-async def insert_conclusao(cliente_id : str, authorization : str = Header(...), data : Conclusao = Body(...) ) :
- id = id_user(authorization)
+@app.patch("/data_conclusao/{id}")
+async def insert_conclusao(id : str, authorization : str = Header(...), data : Conclusao = Body(...) ) :
+ user_id = id_user(authorization)
 
- if not id :
+ if not user_id :
   raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
 
- response = supabase.table("questionarios").update({"conclusao" : data.conclusao, "updated_at" : str(datetime.now())}).eq("cliente_id", cliente_id).eq("id_user", id).execute()
+ response = supabase.table("questionarios").update({"conclusao" : data.conclusao, "updated_at" : str(datetime.now())}).eq("cliente_id", id).eq("id_user", user_id).execute()
 
  if not response.data:
   raise HTTPException(status_code=409, detail="Erro ao inserir conclusão na tabela")
