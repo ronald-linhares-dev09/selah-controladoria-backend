@@ -17,7 +17,11 @@ app = FastAPI()
 
 app.add_middleware(
  CORSMiddleware,
- allow_origins=["https://www.selahconsultoria.com.br/"],
+ allow_origins=[
+    "https://www.selahconsultoria.com.br",
+    "https://selahconsultoria.com.br",
+    "http://localhost:5174"
+],
  allow_credentials=True,
  allow_methods=["*"],
  allow_headers=["*"]
