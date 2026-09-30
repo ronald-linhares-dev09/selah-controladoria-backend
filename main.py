@@ -263,14 +263,14 @@ async def updateCliente(cpf : str, authorization : str = Header(...), dados : Da
 class Status (BaseModel):
  status : str
 
-@app.patch("/status_cliente/{empresa}")
-async def updateStatus(empresa : str, authorization : str = Header(...), cliente : Status = Body(...)):
+@app.patch("/status_cliente/{cliente_id}")
+async def updateStatus(cliente_id : str, authorization : str = Header(...), cliente : Status = Body(...)):
  id = id_user(authorization)
 
  if not id : 
   raise HTTPException(status_code=404, detail="Id de usuário inválido")
  
- response = supabase.table("lista_clientes").update(cliente.model_dump()).eq("id_user",id).eq("empresa",empresa).execute()
+ response = supabase.table("lista_clientes").update(cliente.model_dump()).eq("id_user",id).eq("empresa",cliente_id).execute()
 
  if response.data is None :
   raise HTTPException(status_code=500, detail="Erro ao alterar status do cliente")
@@ -278,13 +278,13 @@ async def updateStatus(empresa : str, authorization : str = Header(...), cliente
  return {"status":"Status do cliente atualizado com sucesso"}
 
 class Contrato (BaseModel) :
- cliente_id : int
+ cliente_id : str
  valor_mensal : str
  forma_pagamento : str
  tempo_contrato : str
 
 @app.delete("/delete_contrato/{cliente_id}")
-async def delete_contrato(cliente_id : int, authorization : str = Header(...)) :
+async def delete_contrato(cliente_id : str, authorization : str = Header(...)) :
  user_id = id_user(authorization)
 
  if not user_id :
@@ -434,7 +434,7 @@ async def get_dados(authorization : str = Header(...)):
  return {"clientes": data_clientes}
 
 @app.get("/notas_questionario/{cliente_id}")
-async def get_notas (cliente_id : int, authorization : str = Header(...)) :
+async def get_notas (cliente_id : str, authorization : str = Header(...)) :
  id = id_user(authorization)
 
  if not id :
@@ -460,7 +460,7 @@ class Conclusao (BaseModel) :
  conclusao : str
 
 @app.patch("/data_conclusao/{cliente_id}")
-async def insert_conclusao(cliente_id : int, authorization : str = Header(...), data : Conclusao = Body(...) ) :
+async def insert_conclusao(cliente_id : str, authorization : str = Header(...), data : Conclusao = Body(...) ) :
  id = id_user(authorization)
 
  if not id :
