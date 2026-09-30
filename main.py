@@ -173,7 +173,7 @@ async def get_empresas(authorization : str = Header(...)):
 class Respostas(BaseModel):
  empresa : str
  notas : Dict[str,Any]
- cliente_id : int
+ cliente_id : str
 
 @app.post("/questionario")
 async def post_respostas(authorization : str = Header(...), data : Respostas = Body(...)):
@@ -232,28 +232,28 @@ async def get_dados(authorization : str = Header(...)):
  
  return {"clientes": data_clientes}
 
-@app.delete("/clientes/{cpf}")
-async def deleteClient( cpf : str, authorization : str = Header(...)):
+@app.delete("/clientes/{cliente_id}")
+async def deleteClient( cliente_id : str, authorization : str = Header(...)):
  id = id_user(authorization)
 
  if not id :
   raise HTTPException(status_code=404, detail="Id de usuário inválido")
  
- response = supabase.table("lista_clientes").delete().eq("cpf",cpf).eq("id_user",id).execute()
+ response = supabase.table("lista_clientes").delete().eq("id",cliente_id).eq("id_user",id).execute()
 
  if response.data is None :
   raise HTTPException(status_code=500, detail="Erro ao deletar cliente")
  
  return {"Status": "Cliente deletado com sucesso do banco de dados"}
 
-@app.put("/update_cliente/{cpf}")
-async def updateCliente(cpf : str, authorization : str = Header(...), dados : DataCliente = Body(...)):
+@app.put("/update_cliente/{cliente_id}")
+async def updateCliente(cliente_id : str, authorization : str = Header(...), dados : DataCliente = Body(...)):
  id = id_user(authorization)
 
  if not id :
   raise HTTPException(status_code=404, detail="Id de usuário inválido")
  
- response = supabase.table("lista_clientes").update(dados.model_dump()).eq("cpf", cpf).eq("id_user",id).execute()
+ response = supabase.table("lista_clientes").update(dados.model_dump()).eq("cliente_id", cliente_id).eq("id_user",id).execute()
 
  if response.data is None :
   raise HTTPException(status_code=500, detail="Erro ao executar update dos dados")
