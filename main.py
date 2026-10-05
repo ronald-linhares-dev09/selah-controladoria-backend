@@ -501,7 +501,7 @@ async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indic
   if not query.data :
    raise HTTPException(status_code=400, detail="Dados de usuário não encontrados")
 
-  pdf = RelatorioSelah(empresa=indicadores.empresa, consultor=query.data['nome'], email=query.data['email'], telefone=query.data['telefone'], cidade=query.data['cidade'], estado=query.data['estado'])
+  pdf = RelatorioSelah(empresa=indicadores.empresa, consultor=query.data[0], email=query.data[1], telefone=query.data[2], cidade=query.data[3], estado=query.data[4])
 
   pdf.add_font('DejaVu', '', 'fonts/DejaVuSans.ttf')
   pdf.add_font('DejaVu', 'B', 'fonts/DejaVuSans-Bold.ttf')
