@@ -441,14 +441,9 @@ class RelatorioSelah(FPDF):
 
    self.set_y(40)
 
- def card(self, x, y, titulo, valor, classificacao, indicador):
+ def card(self, x, y, titulo, valor, classificacao):
     ALTURA = 30
     LARGURA = 60
-
-    if indicador == 'ics':
-     unidade = 'pts'
-    else :
-     unidade = '%'
 
     self.set_draw_color(180, 180, 180)
     self.set_line_width(0.3)
@@ -462,7 +457,7 @@ class RelatorioSelah(FPDF):
     self.set_xy(x, y + 13)
     self.set_font('DeJaVu', '', 18)
     self.set_text_color(0,0,0)
-    self.cell(60, 5, f'{valor}{unidade}', align='C')
+    self.cell(60, 5, f'{valor}', align='C')
 
     self.set_xy(x, y + 24)
     self.set_font('DeJaVu', 'B', 9)
@@ -497,11 +492,13 @@ async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indic
 
   query = supabase.table('usuarios').select("nome, email, telefone, estado, cidade").eq("id", id).execute()
 
-
   if not query.data :
    raise HTTPException(status_code=400, detail="Dados de usuário não encontrados")
 
-  pdf = RelatorioSelah(empresa=indicadores.empresa, consultor=query.data[0], email=query.data[1], telefone=query.data[2], cidade=query.data[3], estado=query.data[4])
+  pdf = RelatorioSelah(empresa=indicadores.empresa, 
+      consultor=query.data[0]['nome'], email=query.data[0]['email'], telefone=query.data[0]['telefone'], 
+      cidade=query.data[0]['cidade'], estado=query.data[0]['estado']
+  )
 
   pdf.add_font('DejaVu', '', 'fonts/DejaVuSans.ttf')
   pdf.add_font('DejaVu', 'B', 'fonts/DejaVuSans-Bold.ttf')
@@ -525,9 +522,9 @@ async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indic
   h_cards = pdf.get_y()
   ims = indicadores.ims
 
-  pdf.card(x=10, y=h_cards, indicador='ims', titulo='IMS Geral', valor=ims.geral.valor, classificacao=ims.geral.classificacao)
-  pdf.card(x=10 + 1 * 65, y=h_cards, indicador='ims', titulo=ims.mais_maduro.nome, valor=ims.mais_maduro.valor, classificacao=ims.mais_maduro.classificacao)
-  pdf.card(x=10 + 2 * 65, y=h_cards, indicador='ims', titulo=ims.mais_fragil.nome, valor=ims.mais_fragil.valor, classificacao=ims.mais_maduro.classificacao)
+  pdf.card(x=10, y=h_cards, indicador='ims', titulo='IMS Geral', valor=f'{ims.geral.valor}%', classificacao=ims.geral.classificacao)
+  pdf.card(x=10 + 1 * 65, y=h_cards, indicador='ims', titulo=ims.mais_maduro.nome, valor=f'{ims.mais_maduro.valor}%', classificacao=ims.mais_maduro.classificacao)
+  pdf.card(x=10 + 2 * 65, y=h_cards, indicador='ims', titulo=ims.mais_fragil.nome, valor=f'{ims.mais_fragil.valor}%', classificacao=ims.mais_fragil.classificacao)
 
   pdf.set_y(h_cards + 35)
 
@@ -545,9 +542,9 @@ async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indic
   h_cards = pdf.get_y()
   ics = indicadores.ics
 
-  pdf.card(x=10, y=h_cards, indicador='ics', titulo='ICS Geral', valor=ics.geral.valor, classificacao=ics.geral.classificacao)
-  pdf.card(x=10 + 1 * 65, y=h_cards, indicador='ics', titulo=ics.mais_saudavel.nome, valor=ics.mais_saudavel.valor, classificacao=ics.mais_saudavel.classificacao)
-  pdf.card(x=10 + 2 * 65, y=h_cards, indicador='ics', titulo=ics.mais_fragil.nome, valor=ics.mais_fragil.valor, classificacao=ics.mais_fragil.classificacao)
+  pdf.card(x=10, y=h_cards, indicador='ics', titulo='ICS Geral', valor=f'{ics.geral.valor}%', classificacao=ics.geral.classificacao)
+  pdf.card(x=10 + 1 * 65, y=h_cards, indicador='ics', titulo=ics.mais_saudavel.nome, valor=f'{ics.mais_saudavel.valor}%', classificacao=ics.mais_saudavel.classificacao)
+  pdf.card(x=10 + 2 * 65, y=h_cards, indicador='ics', titulo=ics.mais_fragil.nome, valor=f'{ics.mais_fragil.valor}%', classificacao=ics.mais_fragil.classificacao)
 
   pdf.set_y(h_cards + 35)
 
@@ -557,7 +554,7 @@ async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indic
   pdf.set_font('DejaVu', '', 8)
   pdf.multi_cell(0, 5, f'{indicadores.conclusao}')
 
-  pdf_bytes = pdf.output()
+  pdf_bytes = bytes(pdf.output())
 
   return Response (
       content=pdf_bytes,
