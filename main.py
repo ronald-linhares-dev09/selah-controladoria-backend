@@ -10,7 +10,8 @@ from jwt import PyJWKClient
 from io import BytesIO
 import pandas as pd
 from fastapi.security import HTTPBasicCredentials, HTTPBearer
-from datetime import datetime
+from datetime import datetime, date
+from fpdf import FPDF
 
 
 app = FastAPI()
@@ -105,7 +106,7 @@ async def dados_user(authorization : str = Header(...)):
 
  return {
   "nome" : user_data.data["nome"],
-  "email": user_data.data["email"]
+  "email": user_data.data["email"],
  }
 
 class DataCliente(BaseModel):
@@ -385,19 +386,179 @@ async def gerar_excel(authorization : str = Header(...), dados : Dados_Validacao
   headers={"Content-Disposition": f"attachment; filename=diagnostico_{dados.empresa}.xlsx"}
 )
 
+class IndicadoresProps(BaseModel):
+ nome : str
+ valor : int
+ classificacao : str
+
+class IndicadorGeral(BaseModel):
+ valor : int
+ classificacao : str
+
+class IMS(BaseModel):
+ geral : IndicadorGeral
+ mais_maduro : IndicadoresProps
+ mais_fragil : IndicadoresProps
+
+class ICS(BaseModel):
+ geral : IndicadorGeral
+ mais_saudavel : IndicadoresProps
+ mais_fragil : IndicadoresProps
 
 class Dados_Indicadores(BaseModel):
  empresa : str
- ims : List[Dict[str,Any]]
- ics : List[Dict[str,Any]]
+ ims : IMS
+ ics : ICS
+ conclusao : str
+
+class RelatorioSelah(FPDF):
+ def __init__(self, empresa : str, consultor : str, telefone : str, estado : str, cidade : str):
+  super().__init__()
+  self.empresa = empresa
+  self.consultor = consultor
+  self.telefone = telefone
+  self.estado = estado
+  self.cidade = cidade
+
+ def header(self):
+   self.image('assets/LogoSelah.png', x=160, y=0, w=30)
+   self.set_font('DejaVu', 'B', 18)
+   self.set_text_color(0,0,0)
+   self.set_xy(10,10)
+   self.cell(100,8 ,'Diagnóstico Estratégico', new_x='LMARGIN', new_y='NEXT')
+
+   self.set_font('DejaVu', '', 8)
+   self.cell(0 , 6, f'Empresa : {self.empresa}')
+
+   self.set_draw_color(0,0,0)
+   self.set_line_width(0.3)
+   self.line(0, 30, 300, 30)
+
+   self.set_draw_color(16, 185, 129)
+   self.line(0, 31.2, 200, 31.2)
+
+ def card(self, x, y, titulo, valor, classificacao, indicador):
+    ALTURA = 30
+    LARGURA = 60
+
+    if indicador == 'ics':
+     unidade = 'pts'
+    else :
+     unidade = '%'
+
+    self.set_draw_color(180, 180, 180)
+    self.set_line_width(0.3)
+    self.rect(x, y, LARGURA, ALTURA)
+
+    self.set_xy(x, y + 2)
+    self.set_font('DeJaVu', 'B', 9)
+    self.set_text_color(90,90,90)
+    self.cell(60, 5, F'{titulo}', align='C')
+
+    self.set_xy(x, y + 13)
+    self.set_font('DeJaVu', '', 18)
+    self.set_text_color(0,0,0)
+    self.cell(60, 5, f'{valor}{unidade}', align='C')
+
+    self.set_xy(x, y + 24)
+    self.set_font('DeJaVu', 'B', 9)
+    self.set_text_color(60,60,60)
+    self.cell(60, 5, f'{classificacao}', align='C')
+
+
+ def footer(self):
+   y_linha = self.h - 24
+   self.set_draw_color(0,0,0)
+   self.set_line_width(0.3)
+   self.line(0, y_linha, 300, y_linha)
+   
+   self.set_draw_color(16, 185, 129)
+   self.line(0, y_linha + 1.2, 200, y_linha + 1.2)
+
+   self.set_y(-18)
+   self.set_font('DejaVu', "", 8)
+   self.set_text_color(120, 120, 120)
+
+   texto_footer = f'Consultor {self.consultor} · Contato {self.telefone} · {self.cidade} - {self.estado}'
+   self.cell(0, 5, texto_footer, new_x='LMARGIN', new_y='NEXT')
+   self.cell(0 , 5, f'Data : {date.today().strftime("%d-%m-%Y")}', align='L')
+   self.cell(5, 5, f'Página {self.page_no()} de {{nb}}', align='R')
 
 @app.post('/gerar_pdf')
 async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indicadores = Body(...)):
- id = id_user(authorization)
+  id = id_user(authorization)
 
- if not id :
-  raise HTTPException(status_code=404, detail='ID de usuário inválido')
- 
+  if not id :
+   raise HTTPException(status_code=404, detail='ID de usuário inválido')
+
+  query = supabase.table('usuarios').select("nome, email, telefone, estado, cidade").eq("id", id).execute()
+
+  if not query.data :
+   raise HTTPException(status_code=400, detail="Dados de usuário não encontrados")
+
+  pdf = RelatorioSelah(empresa=indicadores.empresa, consultor='Ronald Assis', telefone='44 9 9717-7332', cidade="Cianorte", estado="Paraná")
+
+  pdf.add_font('DejaVu', '', 'fonts/DejaVuSans.ttf')
+  pdf.add_font('DejaVu', 'B', 'fonts/DejaVuSans-Bold.ttf')
+
+  pdf.alias_nb_pages()
+  pdf.set_top_margin(45)
+  pdf.add_page()
+  pdf.ln(20)
+
+  pdf.set_font('DejaVu', 'B', 13)
+  pdf.set_text_color(0,0,0)
+  pdf.cell(0, 8, "IMS - Índice de Maturidade Selah", new_x='LMARGIN', new_y='NEXT')
+
+  pdf.set_font('DejaVu', '', 8)
+  pdf.multi_cell(0, 6, 
+  "O índice de maturidade mede : estrutura, organização, processos, gestão e disciplina operacional. Seu objetivo não é medir resultados, e sim a capacidade de gestão", 
+  new_x='LMARGIN', new_y='NEXT'
+  )
+  pdf.ln(4)
+
+  h_cards = pdf.get_y()
+  ims = indicadores.ims
+
+  pdf.card(x=10, y=h_cards, indicador='ims', titulo='IMS Geral', valor=ims.geral.valor, classificacao=ims.geral.classificacao)
+  pdf.card(x=10 + 1 * 65, y=h_cards, indicador='ims', titulo=ims.mais_maduro.nome, valor=ims.mais_maduro.valor, classificacao=ims.mais_maduro.classificacao)
+  pdf.card(x=10 + 2 * 65, y=h_cards, indicador='ims', titulo=ims.mais_fragil.nome, valor=ims.mais_fragil.valor, classificacao=ims.mais_maduro.classificacao)
+
+  pdf.set_y(h_cards + 35)
+
+  pdf.set_font('DejaVu', 'B', 13)
+  pdf.set_text_color(0,0,0)
+  pdf.cell(0, 8, "ICS - Índice de Conexões Selah", new_x='LMARGIN', new_y='NEXT')
+
+  pdf.set_font('DejaVu', '', 8)
+  pdf.multi_cell(0, 6, 
+  "O índice tem o objetivo de mostrar onde está a verdade que a empresa ainda não consegue enxergar. O ICS analisa conexões e mede o alinhamento da empresa, identificando possíveis rupturas", 
+  new_x='LMARGIN', new_y='NEXT'
+  )
+  pdf.ln(4)
+
+  h_cards = pdf.get_y()
+  ics = indicadores.ics
+
+  pdf.card(x=10, y=h_cards, indicador='ics', titulo='ICS Geral', valor=ics.geral.valor, classificacao=ics.geral.classificacao)
+  pdf.card(x=10 + 1 * 65, y=h_cards, indicador='ics', titulo=ics.mais_saudavel.nome, valor=ics.mais_saudavel.valor, classificacao=ics.mais_saudavel.classificacao)
+  pdf.card(x=10 + 2 * 65, y=h_cards, indicador='ics', titulo=ics.mais_fragil.nome, valor=ics.mais_fragil.valor, classificacao=ics.mais_fragil.classificacao)
+
+  pdf.set_y(h_cards + 35)
+
+  pdf.set_font('DejaVu', 'B', 13)
+  pdf.cell(0, 8,"Conclusão do Consultor", new_x='LMARGIN', new_y='NEXT')
+
+  pdf.set_font('DejaVu', '', 8)
+  pdf.multi_cell(0, 5, f'{indicadores.conclusao}')
+
+  pdf_bytes = pdf.output()
+
+  return Response (
+      content=pdf_bytes,
+      media_type='application/pdf',
+      headers={"Content-Disposition" : f"attachment; filename=diagnostico_{indicadores.empresa}.pdf"}
+  )
 
 @app.get("/clientes_fechados")
 async def get_dados(authorization : str = Header(...)):
@@ -466,13 +627,17 @@ async def insert_conclusao(id : str, authorization : str = Header(...), data : C
  if not user_id :
   raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
+ updated_at = str(datetime.now())
 
- response = supabase.table("questionarios").update({"conclusao" : data.conclusao, "updated_at" : str(datetime.now())}).eq("cliente_id", id).eq("id_user", user_id).execute()
+ response = supabase.table("questionarios").update({"conclusao" : data.conclusao, "updated_at" : updated_at}).eq("cliente_id", id).eq("id_user", user_id).execute()
 
  if not response.data:
   raise HTTPException(status_code=409, detail="Erro ao inserir conclusão na tabela")
 
- return {"status" : "Conclusão inserida com sucesso"}
+ return {
+        "status" : "Conclusão inserida com sucesso",
+         "updated" : updated_at
+  }
 
 
 

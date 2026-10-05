@@ -6,3 +6,4 @@ pyjwt
 pandas
 openpyxl
 pydantic
+fpdf2
