@@ -21,7 +21,8 @@ app.add_middleware(
  allow_origins=[
     "https://www.selahconsultoria.com.br",
     "https://selahconsultoria.com.br",
-    "http://localhost:5174"
+    "http://localhost:5174",
+    "http://localhost:5173"
 ],
  allow_credentials=True,
  allow_methods=["*"],
