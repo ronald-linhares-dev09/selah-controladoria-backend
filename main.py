@@ -437,6 +437,8 @@ class RelatorioSelah(FPDF):
    self.set_draw_color(16, 185, 129)
    self.line(0, 31.2, 200, 31.2)
 
+   self.set_y(40)
+
  def card(self, x, y, titulo, valor, classificacao, indicador):
     ALTURA = 30
     LARGURA = 60
@@ -502,7 +504,7 @@ async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indic
   pdf.add_font('DejaVu', 'B', 'fonts/DejaVuSans-Bold.ttf')
 
   pdf.alias_nb_pages()
-  pdf.set_top_margin(45)
+  pdf.set_top_margin(25)
   pdf.add_page()
   pdf.ln(20)
 
