@@ -522,9 +522,9 @@ async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indic
   h_cards = pdf.get_y()
   ims = indicadores.ims
 
-  pdf.card(x=10, y=h_cards, indicador='ims', titulo='IMS Geral', valor=f'{ims.geral.valor}%', classificacao=ims.geral.classificacao)
-  pdf.card(x=10 + 1 * 65, y=h_cards, indicador='ims', titulo=ims.mais_maduro.nome, valor=f'{ims.mais_maduro.valor}%', classificacao=ims.mais_maduro.classificacao)
-  pdf.card(x=10 + 2 * 65, y=h_cards, indicador='ims', titulo=ims.mais_fragil.nome, valor=f'{ims.mais_fragil.valor}%', classificacao=ims.mais_fragil.classificacao)
+  pdf.card(x=10, y=h_cards, titulo='IMS Geral', valor=f'{ims.geral.valor}%', classificacao=ims.geral.classificacao)
+  pdf.card(x=10 + 1 * 65, y=h_cards, titulo=ims.mais_maduro.nome, valor=f'{ims.mais_maduro.valor}%', classificacao=ims.mais_maduro.classificacao)
+  pdf.card(x=10 + 2 * 65, y=h_cards, titulo=ims.mais_fragil.nome, valor=f'{ims.mais_fragil.valor}%', classificacao=ims.mais_fragil.classificacao)
 
   pdf.set_y(h_cards + 35)
 
@@ -542,9 +542,9 @@ async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indic
   h_cards = pdf.get_y()
   ics = indicadores.ics
 
-  pdf.card(x=10, y=h_cards, indicador='ics', titulo='ICS Geral', valor=f'{ics.geral.valor}%', classificacao=ics.geral.classificacao)
-  pdf.card(x=10 + 1 * 65, y=h_cards, indicador='ics', titulo=ics.mais_saudavel.nome, valor=f'{ics.mais_saudavel.valor}%', classificacao=ics.mais_saudavel.classificacao)
-  pdf.card(x=10 + 2 * 65, y=h_cards, indicador='ics', titulo=ics.mais_fragil.nome, valor=f'{ics.mais_fragil.valor}%', classificacao=ics.mais_fragil.classificacao)
+  pdf.card(x=10, y=h_cards, titulo='ICS Geral', valor=f'{ics.geral.valor}pts', classificacao=ics.geral.classificacao)
+  pdf.card(x=10 + 1 * 65, y=h_cards, titulo=ics.mais_saudavel.nome, valor=f'{ics.mais_saudavel.valor}pts', classificacao=ics.mais_saudavel.classificacao)
+  pdf.card(x=10 + 2 * 65, y=h_cards, titulo=ics.mais_fragil.nome, valor=f'{ics.mais_fragil.valor}pts', classificacao=ics.mais_fragil.classificacao)
 
   pdf.set_y(h_cards + 35)
 
