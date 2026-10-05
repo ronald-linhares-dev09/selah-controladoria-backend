@@ -413,10 +413,11 @@ class Dados_Indicadores(BaseModel):
  conclusao : str
 
 class RelatorioSelah(FPDF):
- def __init__(self, empresa : str, consultor : str, telefone : str, estado : str, cidade : str):
+ def __init__(self, empresa : str, consultor : str, email : str, telefone : str, estado : str, cidade : str):
   super().__init__()
   self.empresa = empresa
   self.consultor = consultor
+  self.email = email
   self.telefone = telefone
   self.estado = estado
   self.cidade = cidade
@@ -482,7 +483,7 @@ class RelatorioSelah(FPDF):
    self.set_font('DejaVu', "", 8)
    self.set_text_color(120, 120, 120)
 
-   texto_footer = f'Consultor {self.consultor} · Contato {self.telefone} · {self.cidade} - {self.estado}'
+   texto_footer = f'Consultor {self.consultor} · Contato {self.telefone} · {self.cidade} - {self.estado} · Email {self.email}'
    self.cell(0, 5, texto_footer, new_x='LMARGIN', new_y='NEXT')
    self.cell(0 , 5, f'Data : {date.today().strftime("%d-%m-%Y")}', align='L')
    self.cell(5, 5, f'Página {self.page_no()} de {{nb}}', align='R')
@@ -496,18 +497,19 @@ async def gerar_pdf(authorization : str = Header(...), indicadores : Dados_Indic
 
   query = supabase.table('usuarios').select("nome, email, telefone, estado, cidade").eq("id", id).execute()
 
+
   if not query.data :
    raise HTTPException(status_code=400, detail="Dados de usuário não encontrados")
 
-  pdf = RelatorioSelah(empresa=indicadores.empresa, consultor='Ronald Assis', telefone='44 9 9717-7332', cidade="Cianorte", estado="Paraná")
+  pdf = RelatorioSelah(empresa=indicadores.empresa, consultor=query.data['nome'], email=query.data['email'], telefone=query.data['telefone'], cidade=query.data['cidade'], estado=query.data['estado'])
 
   pdf.add_font('DejaVu', '', 'fonts/DejaVuSans.ttf')
   pdf.add_font('DejaVu', 'B', 'fonts/DejaVuSans-Bold.ttf')
 
   pdf.alias_nb_pages()
-  pdf.set_top_margin(25)
+  pdf.set_top_margin(20)
+  pdf.set_auto_page_break(auto=True, margin=32)
   pdf.add_page()
-  pdf.ln(20)
 
   pdf.set_font('DejaVu', 'B', 13)
   pdf.set_text_color(0,0,0)
