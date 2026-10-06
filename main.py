@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
-from fastapi import HTTPException, Header, Body, FastAPI, Response
+from fastapi import HTTPException, Header, Body, FastAPI, Response, Request
+from postgrest import APIError
+from fastapi.responses import JSONResponse
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from auth import supabase
@@ -28,6 +30,19 @@ app.add_middleware(
  allow_methods=["*"],
  allow_headers=["*"]
 )
+
+ERROR = {
+ "23505" : (409, "Já existe um registro para esse valor"),
+ "23503" : (409, "Operação bloqueada : existe outro registro vinculado"),
+ "23514" : (422, "Valor inválido para esse campo"),
+}
+
+@app.exception_handler(APIError)
+async def tratar_erro(request : Request, exc : APIError):
+ code = exc.code
+ status, mensagem = ERROR.get(code,(500, "Erro ao consultar o banco de dados"))
+ return JSONResponse(status_code=status, content={'detail' : mensagem})
+
 
 SUPABASE_URL = os.environ.get("URL_SUPABASE")
 JWKS_URL = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
@@ -92,16 +107,14 @@ async def login(data : JsonData):
    "email" : user_data.email
   }
  except HTTPException:
-  raise
- except Exception:
-  raise HTTPException(status_code=500, detail="Erro interno ao efetuar login")
- 
+  raise HTTPException(status_code=401, detail="Credenciais Inválidas")
+
 @app.get("/dados_user")
 async def dados_user(authorization : str = Header(...)):
  id_usuário = id_user(authorization)
 
  if not id_usuário:
-  raise HTTPException(status_code=400, detail="Usuário não cadastrado")
+  raise HTTPException(status_code=401, detail="Usuário não cadastrado")
  
  user_data = supabase.table("usuarios").select("nome, email").eq("id", id_usuário).single().execute()
 
@@ -126,10 +139,12 @@ class DataCliente(BaseModel):
 @app.post("/clientes")
 async def add_cliente(authorization : str = Header(...), dados : DataCliente = Body(...)):
 
- try :
-  print("Data",dados)
+  id = id_user(authorization)
 
-  cliente = {"id_user": id_user(authorization),
+  if not id :
+   raise HTTPException(status_code=401, detail='ID de usuário inválido')
+
+  cliente = {"id_user": id,
    "nome": dados.nome,
    "cpf": dados.cpf,
    "telefone":dados.telefone,
@@ -143,27 +158,20 @@ async def add_cliente(authorization : str = Header(...), dados : DataCliente = B
    "cidade" : dados.cidade,
    }
   
-  print("Cliente", cliente)
 
   insert = supabase.table("lista_clientes").insert(
   [cliente]
   ).execute()
- 
+
   return {"Status" : "OK",
   "Dados inseridos": insert.data}
-
- except HTTPException :
-   raise
- except Exception as e :
-   print("Erro Detalhado", type(e).__name__, str(e))
-   raise HTTPException(status_code=500, detail="Erro interno no Sistema")
  
 @app.get("/empresas")
 async def get_empresas(authorization : str = Header(...)):
  id = id_user(authorization)
 
  if not id :
-  raise HTTPException(status_code=400, detail="Permissão negada, id inválido!")
+  raise HTTPException(status_code=401, detail="Permissão negada, id inválido!")
 
  response = supabase.table("lista_clientes").select("empresa").eq("id_user", id).execute()
 
@@ -182,7 +190,7 @@ async def post_respostas(authorization : str = Header(...), data : Respostas = B
  id = id_user(authorization)
 
  if not id :
-  raise HTTPException(status_code=404, detail='Id de usuário inválida')
+  raise HTTPException(status_code=401, detail='Id de usuário inválida')
 
  insert_data = {
   "id_user" : id,
@@ -193,8 +201,8 @@ async def post_respostas(authorization : str = Header(...), data : Respostas = B
 
  response_1 = supabase.table("questionarios").upsert([insert_data],on_conflict="cliente_id").execute()
 
- if not response_1.data :
-  raise HTTPException(status_code=500, detail="Erro ao inserir no banco")
+ if response_1.data is None :
+  raise HTTPException(status_code=404, detail="Questionário não encontrado no banco")
 
  return {"Dados Inseridos": response_1.data,
          "Status":"Dados inseridos com sucesso"
@@ -206,12 +214,12 @@ async def get_dados(authorization : str = Header(...)):
  id = id_user(authorization)
 
  if not id :
-  raise HTTPException(status_code=404, detail="Id de usuário inválido")
+  raise HTTPException(status_code=401, detail="Id de usuário inválido")
  
  response = supabase.table("lista_clientes").select("*").eq("id_user",id).execute()
 
  if response.data is None :
-  raise HTTPException(status_code=500, detail="Erro ao buscar dados no banco")
+  raise HTTPException(status_code=404, detail="Clientes não encontrados no banco")
 
  data_clientes = [
    {
@@ -244,7 +252,7 @@ async def deleteClient( cliente_id : str, authorization : str = Header(...)):
  response = supabase.table("lista_clientes").delete().eq("id",cliente_id).eq("id_user",id).execute()
 
  if response.data is None :
-  raise HTTPException(status_code=500, detail="Erro ao deletar cliente")
+  raise HTTPException(status_code=404, detail="Erro ao deletar cliente : Cliente não encontrado")
  
  return {"Status": "Cliente deletado com sucesso do banco de dados"}
 
@@ -253,12 +261,12 @@ async def updateCliente(cliente_id : str, authorization : str = Header(...), dad
  id = id_user(authorization)
 
  if not id :
-  raise HTTPException(status_code=404, detail="Id de usuário inválido")
+  raise HTTPException(status_code=401, detail="Id de usuário inválido")
  
  response = supabase.table("lista_clientes").update(dados.model_dump()).eq("id", cliente_id).eq("id_user",id).execute()
 
  if response.data is None :
-  raise HTTPException(status_code=500, detail="Erro ao executar update dos dados")
+  raise HTTPException(status_code=404, detail="Cliente não encontrado no banco de dados")
  
  return {"status":"Dados atualizados com sucesso"}
 
@@ -270,12 +278,12 @@ async def updateStatus(cliente_id : str, authorization : str = Header(...), clie
  id = id_user(authorization)
 
  if not id : 
-  raise HTTPException(status_code=404, detail="Id de usuário inválido")
+  raise HTTPException(status_code=401, detail="Id de usuário inválido")
  
  response = supabase.table("lista_clientes").update(cliente.model_dump()).eq("id_user",id).eq("id",cliente_id).execute()
 
  if response.data is None :
-  raise HTTPException(status_code=500, detail="Erro ao alterar status do cliente")
+  raise HTTPException(status_code=404, detail="Cliente não encontrado")
  
  return {"status":"Status do cliente atualizado com sucesso"}
 
@@ -290,12 +298,12 @@ async def delete_contrato(cliente_id : str, authorization : str = Header(...)) :
  user_id = id_user(authorization)
 
  if not user_id :
-  raise HTTPException(status_code=404, detail="Usuário não autorizado")
+  raise HTTPException(status_code=401, detail="Usuário não autorizado")
 
  response = supabase.table("contratos").delete().eq("cliente_id", cliente_id).execute()
 
  if response.data is None :
-  raise HTTPException(status_code=500, detail="Contrato não encontrado na tabela")
+  raise HTTPException(status_code=404, detail="Contrato não encontrado na tabela")
 
  return { "status" : "Contrato Deletado com sucesso"}
 
@@ -305,7 +313,7 @@ async def att_contrato(authorization : str = Header(...), contrato : Contrato = 
  id = id_user(authorization)
 
  if not id :
-  raise HTTPException(status_code=404, detail="Id de usuário inválido")
+  raise HTTPException(status_code=401, detail="Id de usuário inválido")
  
  
  data_contrato = {
@@ -320,7 +328,7 @@ async def att_contrato(authorization : str = Header(...), contrato : Contrato = 
  response = supabase.table("contratos").upsert([data_contrato],on_conflict="cliente_id").execute()
 
  if response.data is None :
-  raise HTTPException(status_code=500, detail="Erro ao inserir contrato na tabela")
+  raise HTTPException(status_code=404, detail="Contrato não encontrado")
  
  return {"status":"Contrato Inserido com Sucesso"}
 
@@ -335,7 +343,7 @@ async def data_contrato(authorization : str = Header(...)):
  response = supabase.table("contratos").select("*").eq("id_user",id).execute()
 
  if response.data is None :
-  raise HTTPException(status_code=500, detail="Erro ao inserir contrato na tabela")
+  raise HTTPException(status_code=404, detail="Contratos não encontrados")
  
 
  data = [
@@ -573,7 +581,7 @@ async def get_dados(authorization : str = Header(...)):
  response = supabase.table("lista_clientes").select("*").eq("id_user",id).eq("status","contratado").execute()
 
  if response.data is None :
-  raise HTTPException(status_code=500, detail="Erro ao buscar dados no banco")
+  raise HTTPException(status_code=404, detail="Clientes não encontrados")
 
  data_clientes = [
    {
@@ -606,7 +614,7 @@ async def get_notas (id : str, authorization : str = Header(...)) :
  response = supabase.table("questionarios").select("respostas, conclusao, updated_at").eq("id_user", user_id).eq("cliente_id", id).execute()
 
  if not response.data:
-  raise HTTPException(status_code=500, detail="Erro ao consultar respostas da empresa na tabela")
+  raise HTTPException(status_code=404, detail="Questionário não encontrado")
 
 
  notas_pilares = response.data[0]["respostas"]
@@ -634,7 +642,7 @@ async def insert_conclusao(id : str, authorization : str = Header(...), data : C
  response = supabase.table("questionarios").update({"conclusao" : data.conclusao, "updated_at" : updated_at}).eq("cliente_id", id).eq("id_user", user_id).execute()
 
  if not response.data:
-  raise HTTPException(status_code=409, detail="Erro ao inserir conclusão na tabela")
+  raise HTTPException(status_code=404, detail="Questionário não encontrado")
 
  return {
         "status" : "Conclusão inserida com sucesso",
