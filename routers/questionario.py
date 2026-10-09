@@ -35,8 +35,8 @@ async def post_respostas(user_id  : str = Depends(id_user), data : Respostas = B
          "Status":"Dados inseridos com sucesso"
          }
 
-@router_v1.get("/{id}/notas")
-async def get_notas (id : str, user_id  : str = Depends(id_user)) :
+@router_v1.get("/{cliente_id}/notas")
+async def get_notas (cliente_id : str, user_id  : str = Depends(id_user)) :
 
 
  if not user_id :
@@ -58,8 +58,8 @@ async def get_notas (id : str, user_id  : str = Depends(id_user)) :
   "updated_at": data_update
  }
 
-@router_v1.patch("/{id}/data_conclusao")
-async def insert_conclusao(id : str, user_id  : str = Depends(id_user), data : Conclusao = Body(...) ) :
+@router_v1.patch("/{cliente_id}/data_conclusao")
+async def insert_conclusao(cliente_id : str, user_id  : str = Depends(id_user), data : Conclusao = Body(...) ) :
 
  if not user_id :
   raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -76,7 +76,7 @@ async def insert_conclusao(id : str, user_id  : str = Depends(id_user), data : C
          "updated" : updated_at
   }
 
-@router_v1.post('/{id}/relatorio.pdf')
+@router_v1.post('/{cliente_id}/relatorio.pdf')
 async def gerar_pdf(user_id  : str = Depends(id_user), indicadores : Dados_Indicadores = Body(...)):
 
   if not user_id :
@@ -154,7 +154,7 @@ async def gerar_pdf(user_id  : str = Depends(id_user), indicadores : Dados_Indic
       headers={"Content-Disposition" : f"attachment; filename=diagnostico_{indicadores.empresa}.pdf"}
   )
 
-@router_v1.post("/{id}/planilha.xlsx")
+@router_v1.post("/{cliente_id}/planilha.xlsx")
 async def gerar_excel(user_id  : str = Depends(id_user), dados : Dados_Validacao = Body(...)) :
  
  if not user_id :

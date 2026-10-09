@@ -53,7 +53,7 @@ async def data_contrato(user_id  : str = Depends(id_user)):
  if not user_id :
   raise HTTPException(status_code=404, detail="Id de usuário inválido")
  
- response = supabase.table("contratos").select("*").eq("id_user",id).execute()
+ response = supabase.table("contratos").select("*").eq("id_user",user_id).execute()
 
  if response.data is None :
   raise HTTPException(status_code=404, detail="Contratos não encontrados")
