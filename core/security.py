@@ -1,5 +1,5 @@
 import os
-from fastapi import HTTPException, Header
+from fastapi import HTTPException, Header, Depends
 from jwt import PyJWKClient
 from fastapi.security import HTTPBasicCredentials, HTTPBearer
 import jwt
@@ -9,12 +9,9 @@ JWKS_URL = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
 jwks_client = PyJWKClient(JWKS_URL, cache_keys=True)
 schema_security = HTTPBearer()
 
-def id_user(authorization: str = Header(...)):
- 
-  if not authorization.startswith("Bearer "):
-     raise HTTPException(status_code=401, detail='Token Inválido')
-   
-  token = authorization.split(" ")[1]
+def id_user(authorization: HTTPBasicCredentials = Depends(schema_security)):
+
+  token = authorization.credentials
 
   try:
    signing_assinature_key = jwks_client.get_signing_key_from_jwt(token)
