@@ -14,6 +14,8 @@ import pandas as pd
 from fastapi.security import HTTPBasicCredentials, HTTPBearer
 from datetime import datetime, date
 from fpdf import FPDF
+from supabase_auth.errors import AuthApiError
+from routers import contratos,clientes,questionario
 
 
 app = FastAPI()
@@ -32,7 +34,7 @@ app.add_middleware(
 )
 
 ERROR = {
- "23505" : (409, "Já existe um registro para esse valor"),
+ "23505" : (409, "Já existe um registro para esse cpf"),
  "23503" : (409, "Operação bloqueada : existe outro registro vinculado"),
  "23514" : (422, "Valor inválido para esse campo"),
 }
@@ -106,7 +108,7 @@ async def login(data : JsonData):
    "token": token,
    "email" : user_data.email
   }
- except HTTPException:
+ except AuthApiError:
   raise HTTPException(status_code=401, detail="Credenciais Inválidas")
 
 @app.get("/dados_user")
@@ -649,6 +651,10 @@ async def insert_conclusao(id : str, authorization : str = Header(...), data : C
          "updated" : updated_at
   }
 
+
+app.include_router(clientes.router_v1, prefix='/v1')
+app.include_router(contratos.router_v1, prefix='/v1')
+app.include_router(questionario.router_v1, prefix='/v1')
 
 
  
