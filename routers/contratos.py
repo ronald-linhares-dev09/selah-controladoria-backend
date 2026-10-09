@@ -10,9 +10,9 @@ router_v1 = APIRouter(
 )
 
 @router_v1.delete("/{cliente_id}")
-async def delete_contrato(cliente_id : str, id  : str = [Depends(id_user)]) :
+async def delete_contrato(cliente_id : str, user_id  : str = Depends(id_user)) :
 
- if not id :
+ if not user_id :
   raise HTTPException(status_code=401, detail="Usuário não autorizado")
 
  response = supabase.table("contratos").delete().eq("cliente_id", cliente_id).execute()
@@ -23,15 +23,15 @@ async def delete_contrato(cliente_id : str, id  : str = [Depends(id_user)]) :
  return { "status" : "Contrato Deletado com sucesso"}
 
 @router_v1.post("")
-async def att_contrato(id  : str = [Depends(id_user)], contrato : Contrato = Body(...)):
+async def att_contrato(user_id  : str = Depends(id_user), contrato : Contrato = Body(...)):
  
 
- if not id :
+ if not user_id:
   raise HTTPException(status_code=401, detail="Id de usuário inválido")
  
  
  data_contrato = {
-  "id_user" : id,
+  "id_user" : user_id,
   "cliente_id" : contrato.cliente_id,
   "valor_mensal" : contrato.valor_mensal,
   "forma_pagamento" : contrato.forma_pagamento,
@@ -47,10 +47,10 @@ async def att_contrato(id  : str = [Depends(id_user)], contrato : Contrato = Bod
  return {"status":"Contrato Inserido com Sucesso"}
 
 @router_v1.get("")
-async def data_contrato(id  : str = [Depends(id_user)]):
+async def data_contrato(user_id  : str = Depends(id_user)):
  
 
- if not id :
+ if not user_id :
   raise HTTPException(status_code=404, detail="Id de usuário inválido")
  
  response = supabase.table("contratos").select("*").eq("id_user",id).execute()

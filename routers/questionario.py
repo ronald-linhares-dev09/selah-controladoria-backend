@@ -14,13 +14,13 @@ router_v1 = APIRouter(
 )
 
 @router_v1.post("")
-async def post_respostas(id  : str = [Depends(id_user)], data : Respostas = Body(...)):
+async def post_respostas(user_id  : str = Depends(id_user), data : Respostas = Body(...)):
 
- if not id :
+ if not user_id :
   raise HTTPException(status_code=401, detail='Id de usuário inválida')
 
  insert_data = {
-  "id_user" : id,
+  "id_user" : user_id,
   'cliente_id' : data.cliente_id,
   "empresa" : data.empresa,
   "respostas" : data.notas
@@ -36,7 +36,7 @@ async def post_respostas(id  : str = [Depends(id_user)], data : Respostas = Body
          }
 
 @router_v1.get("/{id}/notas")
-async def get_notas (id : str, user_id  : str = [Depends(id_user)]) :
+async def get_notas (id : str, user_id  : str = Depends(id_user)) :
 
 
  if not user_id :
@@ -59,7 +59,7 @@ async def get_notas (id : str, user_id  : str = [Depends(id_user)]) :
  }
 
 @router_v1.patch("/{id}/data_conclusao")
-async def insert_conclusao(id : str, user_id  : str = [Depends(id_user)], data : Conclusao = Body(...) ) :
+async def insert_conclusao(id : str, user_id  : str = Depends(id_user), data : Conclusao = Body(...) ) :
 
  if not user_id :
   raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -77,9 +77,9 @@ async def insert_conclusao(id : str, user_id  : str = [Depends(id_user)], data :
   }
 
 @router_v1.post('/{id}/relatorio.pdf')
-async def gerar_pdf(id  : str = [Depends(id_user)], indicadores : Dados_Indicadores = Body(...)):
+async def gerar_pdf(user_id  : str = Depends(id_user), indicadores : Dados_Indicadores = Body(...)):
 
-  if not id :
+  if not user_id :
    raise HTTPException(status_code=404, detail='ID de usuário inválido')
 
   query = supabase.table('usuarios').select("nome, email, telefone, estado, cidade").eq("id", id).execute()
@@ -155,10 +155,9 @@ async def gerar_pdf(id  : str = [Depends(id_user)], indicadores : Dados_Indicado
   )
 
 @router_v1.post("/{id}/planilha.xlsx")
-async def gerar_excel(id  : str = [Depends(id_user)], dados : Dados_Validacao = Body(...)) :
+async def gerar_excel(user_id  : str = Depends(id_user), dados : Dados_Validacao = Body(...)) :
  
-
- if not id :
+ if not user_id :
    raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
  estrutura_final = {}
