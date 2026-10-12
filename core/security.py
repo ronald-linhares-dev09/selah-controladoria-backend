@@ -1,7 +1,7 @@
 import os
 from fastapi import HTTPException, Header, Depends
 from jwt import PyJWKClient
-from fastapi.security import HTTPBasicCredentials, HTTPBearer
+from fastapi.security import HTTPBasicCredentials, HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
 SUPABASE_URL = os.environ.get("URL_SUPABASE")
@@ -9,7 +9,7 @@ JWKS_URL = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
 jwks_client = PyJWKClient(JWKS_URL, cache_keys=True)
 schema_security = HTTPBearer()
 
-def id_user(authorization: HTTPBasicCredentials = Depends(schema_security)):
+def id_user(authorization: HTTPAuthorizationCredentials = Depends(schema_security)):
 
   token = authorization.credentials
 
