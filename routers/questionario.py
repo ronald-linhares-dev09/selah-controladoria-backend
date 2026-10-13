@@ -42,7 +42,7 @@ async def get_notas (cliente_id : str, user_id  : str = Depends(id_user)) :
  if not user_id :
   raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
- response = supabase.table("questionarios").select("respostas, conclusao, updated_at").eq("id_user", user_id).eq("cliente_id", id).execute()
+ response = supabase.table("questionarios").select("respostas, conclusao, updated_at").eq("id_user", user_id).eq("cliente_id", cliente_id).execute()
 
  if not response.data:
   raise HTTPException(status_code=404, detail="Questionário não encontrado")
@@ -66,14 +66,14 @@ async def insert_conclusao(cliente_id : str, user_id  : str = Depends(id_user), 
 
  updated_at = str(datetime.now())
 
- response = supabase.table("questionarios").update({"conclusao" : data.conclusao, "updated_at" : updated_at}).eq("cliente_id", id).eq("id_user", user_id).execute()
+ response = supabase.table("questionarios").update({"conclusao" : data.conclusao, "updated_at" : updated_at}).eq("cliente_id", cliente_id).eq("id_user", user_id).execute()
 
  if not response.data:
   raise HTTPException(status_code=404, detail="Questionário não encontrado")
 
  return {
         "status" : "Conclusão inserida com sucesso",
-         "updated" : updated_at
+        "updated" : updated_at
   }
 
 @router_v1.post('/{cliente_id}/relatorio.pdf')
