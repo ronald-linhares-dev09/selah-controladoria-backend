@@ -82,7 +82,7 @@ async def gerar_pdf(user_id  : str = Depends(id_user), indicadores : Dados_Indic
   if not user_id :
    raise HTTPException(status_code=404, detail='ID de usuário inválido')
 
-  query = supabase.table('usuarios').select("nome, email, telefone, estado, cidade").eq("id", id).execute()
+  query = supabase.table('usuarios').select("nome, email, telefone, estado, cidade").eq("id", user_id).execute()
 
   if not query.data :
    raise HTTPException(status_code=400, detail="Dados de usuário não encontrados")
