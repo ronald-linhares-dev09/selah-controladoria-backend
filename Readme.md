@@ -34,9 +34,9 @@ Copie `.env.example` para o `.env` de cada setor - frontend + backend - e preenc
 
 **Pré-Requisitos** : Python (3.11.6), Projeto Ativo no SUPABASE
 
+
 ````bash
 
-# Backend
 git clone https://github.com/ronald-linhares-dev09/selah-controladoria-backend.git
 cd selah-controladoria-backend
 cp .env.example .env
@@ -55,9 +55,10 @@ graph LR
 ````
 
 ````
-routers/ # rotas - delimitadas por cada entidade presente no banco, apontam para qual operação realizar
-core/ # autenticação e extração do uuid de usuário
-schemas/ # validação de dados recebidos ou enviados - categorizados por entidade
+app/
+├── routers/     # rotas - delimitadas por cada entidade presente no banco, apontam para qual operação realizar
+├── schemas/     # validação de dados recebidos ou enviados - categorizados por entidade
+└── core/        # autenticação e extração do uuid de usuário
 ````
 
 ## Decisões Técnicas
