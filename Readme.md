@@ -26,21 +26,19 @@ O sistema também conta com um CRM, para que o consultor consiga gerenciar os co
 
 Copie `.env.example` para o `.env` de cada setor - frontend + backend - e preencha :
 
-| Variável | Onde usar | O que é |
+| Variável | Importância | O que é |
 | -------- | --------- | ------- |
-| `URL_SUPABASE` | backend | URL utilizada para consultar o banco |
-| `SERVICE_ROLE_KEY` | backend | Chave de serviço utilizada para habilitar operações no banco de dados |
+| `URL_SUPABASE` | essencial | URL utilizada para consultar o banco |
+| `SERVICE_ROLE_KEY` | essencial | Chave de serviço utilizada para habilitar operações no banco de dados |
 
 
 **Pré-Requisitos** : Python (3.11.6), Projeto Ativo no SUPABASE
 
 
 ````bash
-
 git clone https://github.com/ronald-linhares-dev09/selah-controladoria-backend.git
 cd selah-controladoria-backend
 cp .env.example .env
-
 pip install -r requirements.txt
 uvicorn main:app --reload
 
